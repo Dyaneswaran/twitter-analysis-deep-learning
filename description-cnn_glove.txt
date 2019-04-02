@@ -1,0 +1,92 @@
+Task 6: OffensEval: Identifying and Categorizing Offensive Language in Social Media
+------------------------------------------------------------------------------------
+Sub-task B - Automatic categorization of offense types
+------------------------------------------------------------------------------------
+
+
+This package contains a *.csv file with two columns:
+	(1) Sample ID
+	(2) Sample Label
+
+
+- (TIN) Targeted Insult and Threats - A post containing an insult or threat to an individual, a group, or others (see categories in sub-task C).
+- (UNT) Untargeted - A post containing non-targeted profanity and swearing.
+
+Training Dataset
+================
+
+
+A combined dataset containing the following csv files was used to train our model.
+	(1) Given training dataset (offenseval-training-v1.tsv) containing 13,240 annotated tweets.
+	(2) Given trial dataset (offenseval-trial.txt) containing 320 annotated tweets. 
+	(3) Imperium Dataset of Kaggle
+	(4) Google GloVe Word2Vec Vectors.
+
+
+
+Model Specification
+===================
+
+(1) Data Preprocessing : 
+
+
+	1. Clean all HTML data.
+	1. Remove Emojis and Emoticons.
+	2. Remove URLs and Mentions.
+	3. Expand all Hashtags.
+	4. Expand Contractions.
+	5. Lemmatize the words.
+	6. Replacing Censored Words.
+	7. Removing Punctuators.
+
+
+(2) Building our Model :
+
+	Our System is a made up of a Convolutional Neural Network 1D with an Embedding layer whose initial weights are assigned using an embedding matrix created from Word2Vec word vectors of Google.
+
+	An Embeddding Matrix created using the word Embeddings is given as the initialization weight matrix to the Embedding Layer.
+	Using the CNN1D layers the bigrams, trigrams, fourgrams are produced by using an appropriate kernel. The output tensors each of 
+	dimension 100 (using 100 filters) are concatenated in the Merged Layer to produce an output tensor of size 300 which is provided as 
+	the input to the following Dense layers with dropouts and acitvated by the 'Sigmoid' function. The network trained using an embedding
+	matrix using Google's pre-trained GloVe Word2Vec vectors calculates the probablity of the offensive tweet being a targeted insult or an untargeted profanity.
+
+
+The Model's layer descriptions are provided as follows - 
+
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+input_2 (InputLayer)            (None, 191)          0                                            
+__________________________________________________________________________________________________
+embedding_2 (Embedding)         (None, 191, 300)     9000000     input_2[0][0]                    
+__________________________________________________________________________________________________
+conv1d_4 (Conv1D)               (None, 190, 100)     60100       embedding_2[0][0]                
+__________________________________________________________________________________________________
+conv1d_5 (Conv1D)               (None, 189, 100)     90100       embedding_2[0][0]                
+__________________________________________________________________________________________________
+conv1d_6 (Conv1D)               (None, 188, 100)     120100      embedding_2[0][0]                
+__________________________________________________________________________________________________
+global_max_pooling1d_4 (GlobalM (None, 100)          0           conv1d_4[0][0]                   
+__________________________________________________________________________________________________
+global_max_pooling1d_5 (GlobalM (None, 100)          0           conv1d_5[0][0]                   
+__________________________________________________________________________________________________
+global_max_pooling1d_6 (GlobalM (None, 100)          0           conv1d_6[0][0]                   
+__________________________________________________________________________________________________
+concatenate_2 (Concatenate)     (None, 300)          0           global_max_pooling1d_4[0][0]     
+                                                                 global_max_pooling1d_5[0][0]     
+                                                                 global_max_pooling1d_6[0][0]     
+__________________________________________________________________________________________________
+dense_3 (Dense)                 (None, 256)          77056       concatenate_2[0][0]              
+__________________________________________________________________________________________________
+dropout_2 (Dropout)             (None, 256)          0           dense_3[0][0]                    
+__________________________________________________________________________________________________
+dense_4 (Dense)                 (None, 1)            257         dropout_2[0][0]                  
+__________________________________________________________________________________________________
+activation_2 (Activation)       (None, 1)            0           dense_4[0][0]                    
+==================================================================================================
+Total params: 9,347,613
+Trainable params: 9,347,613
+Non-trainable params: 0
+__________________________________________________________________________________________________
+
+------------------------------THANK YOU---------------------------------
