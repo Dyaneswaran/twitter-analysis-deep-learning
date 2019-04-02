@@ -1,0 +1,101 @@
+Task 6: OffensEval: Identifying and Categorizing Offensive Language in Social Media
+------------------------------------------------------------------------------------
+Sub-task A - Offensive language identification
+------------------------------------------------------------------------------------
+
+
+This package contains a *.csv file with two columns:
+	(1) Sample ID
+	(2) Sample Label
+
+
+
+Training Dataset
+================
+
+
+A combined dataset containing the following csv files was used to train our model.
+	(1) Given training dataset (offenseval-training-v1.tsv) containing 13,240 annotated tweets.
+	(2) Given trial dataset (offenseval-trial.txt) containing 320 annotated tweets. 
+	(3) A CSV file containing the list of common offensive words -
+		Source-1: https://www.freewebheaders.com/full-list-of-bad-words-banned-by-google/ 
+     	 	Source-2: http://www.bannedwordlist.com/
+	(4) Google GloVe Word2Vec Vectors.
+
+
+
+Model Specification
+===================
+
+(1) Data Preprocessing : 
+
+
+	1. Clean all HTML data.
+	1. Remove Emojis and Emoticons.
+	2. Remove URLs and Mentions.
+	3. Expand all Hashtags.
+	4. Expand Contractions.
+	5. Lemmatize the words.
+	6. Remove Stopwords.
+	7. Replacing Censored Words.
+	8. Removing Punctuators.
+
+
+(2) Building our Model :
+
+	Our System is a sequence of two models:
+		
+		1. Convolutional Neural Network 1D using GloVe Embeddings.
+		2. Probabilistic Comparator for Most Commonly Used Offensive Words.
+
+	
+
+
+	An Embeddding Matrix created using the GloVe Embeddings is given as the initialization weight matrix to the Embedding Layer.
+	Using the CNN1D layers the bigrams, trigrams, fourgrams are produced by using an appropriate kernel. The output tensors each of 		dimension 100 (using 100 filters) are concatenated in the Merged Layer to produce an output tensor of size 300 which is provided as 		the input to the following Dense layers with dropouts and acitvated by the 'Sigmoid' function. The network trained using an embeding		matrix using Google's pre-trained GloVe Word2Vec vectors calculates the probablity of the tweet being offensive and not offensive.
+
+	If the model is sure i.e P(offensive|not_offensive) > 0.70, then we go with the model's predictions.
+	Else, we will employ the Comparator model compares each word of the tweet with the list of common offensive words.	
+	Then, if an offensive word is found, then the tweet is declared to be offensive.
+
+
+The Model's layer descriptions are provided as follows - 
+
+
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+input (InputLayer)            (None, 57)           0                                            
+__________________________________________________________________________________________________
+embedding_layer (Embedding)         (None, 57, 300)      9000000     input_5[0][0]                    
+__________________________________________________________________________________________________
+conv1d_bigram (Conv1D)              (None, 56, 100)      60100       embedding_layer[0][0]                
+__________________________________________________________________________________________________
+conv1d_trigram (Conv1D)              (None, 55, 100)      90100       embedding_layer[0][0]                
+__________________________________________________________________________________________________
+conv1d_fourgram (Conv1D)              (None, 54, 100)      120100      embedding_layer[0][0]                
+__________________________________________________________________________________________________
+global_max_pooling1d_bigram (GlobalMaxPooling1D) (None, 100)          0           conv1d_bigram[0][0]                  
+__________________________________________________________________________________________________
+global_max_pooling1d_trigram (GlobalMaxPooling1D) (None, 100)          0           conv1d_trigram[0][0]                  
+__________________________________________________________________________________________________
+global_max_pooling1d_fourgram (GlobalMaxPooling1D) (None, 100)          0           conv1d_fourgram[0][0]                  
+__________________________________________________________________________________________________
+concatenate (Concatenate)     (None, 300)          0           global_max_pooling1d_bigram[0][0]     
+                                                                 global_max_pooling1d_trigram[0][0]     
+                                                                 global_max_pooling1d_fourgram[0][0]     
+__________________________________________________________________________________________________
+dense_1 (Dense)                 (None, 256)          77056       concatenate[0][0]              
+__________________________________________________________________________________________________
+dropout (Dropout)             (None, 256)          0           dense_1[0][0]                    
+__________________________________________________________________________________________________
+dense_2 (Dense)                 (None, 1)            257         dropout[0][0]                  
+__________________________________________________________________________________________________
+activation (Activation)       (None, 1)            0           dense_2[0][0]                    
+==================================================================================================
+Total params: 9,347,613
+Trainable params: 9,347,613
+Non-trainable params: 0
+__________________________________________________________________________________________________
+
+------------------------------THANK YOU---------------------------------
