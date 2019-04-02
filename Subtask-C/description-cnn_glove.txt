@@ -1,0 +1,91 @@
+OffensEval 2019: Identifying and Categorizing Offensive Language in Social Media (SemEval 2019 - Task 6)
+Test data - Sub-task C
+v 1.0: January 29 2019
+
+This package contains a *.csv file with two columns:
+	(1) Sample ID
+	(2) Sample Label
+
+- (IND) Individual - The target of the offensive post is an individual: a famous person, a named individual or an unnamed person interacting in the conversation.
+- (GRP) Group - The target of the offensive post is a group of people considered as a unity due to the same ethnicity, gender or sexual orientation, political affiliation, religious belief, or something else.
+- (OTH) Other – The target of the offensive post does not belong to any of the previous two categories (e.g., an organization, a situation, an event, or an issue)
+
+
+Training Dataset
+================
+
+
+A combined dataset containing the following csv files was used to train our model.
+	(1) Given training dataset (offenseval-training-v1.tsv) containing 3,987 targeted annotated tweets.
+	(2) Given trial dataset (offenseval-trial.txt) containing 320 annotated tweets. 
+	(4) Google GloVe Word2Vec Vectors.
+
+
+
+Model Specification
+===================
+
+(1) Data Preprocessing : 
+
+
+	1. Clean all HTML data.
+	1. Remove Emojis and Emoticons.
+	2. Remove URLs and Mentions.
+	3. Expand all Hashtags.
+	4. Expand Contractions.
+	5. Lemmatize the words.
+	6. Replacing Censored Words.
+	7. Removing Punctuators.
+
+
+(2) Building our Model :
+
+	Our System is a made up of a Convolutional Neural Network 1D with an Embedding layer whose initial weights are assigned using an embedding matrix created 
+	from Word2Vec word vectors of Google.
+
+	An Embeddding Matrix created using the word Embeddings is given as the initialization weight matrix to the Embedding Layer.
+	Using the CNN1D layers the bigrams, trigrams, fourgrams are produced by using an appropriate kernel. The output tensors each of 
+	dimension 100 (using 100 filters) are concatenated in the Merged Layer to produce an output tensor of size 300 which is provided as 
+	the input to the following Dense layers with dropouts and acitvated by the 'Softmax' function for 3 output classes. The network 
+	trained using an embedding matrix using Word2Vec vectors of Google's updated during the training process calculates the probablity of 
+	the offensive tweet being a insult targeted at an individual or an organization or at others.
+
+The Model's layer descriptions are provided as follows - 
+
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+input_6 (InputLayer)            (None, 57)           0                                            
+__________________________________________________________________________________________________
+embedding_5 (Embedding)         (None, 57, 300)      9000000     input_6[0][0]                    
+__________________________________________________________________________________________________
+conv1d_13 (Conv1D)              (None, 56, 100)      60100       embedding_5[0][0]                
+__________________________________________________________________________________________________
+conv1d_14 (Conv1D)              (None, 55, 100)      90100       embedding_5[0][0]                
+__________________________________________________________________________________________________
+conv1d_15 (Conv1D)              (None, 54, 100)      120100      embedding_5[0][0]                
+__________________________________________________________________________________________________
+max_pooling1d_7 (MaxPooling1D)  (None, 28, 100)      0           conv1d_13[0][0]                  
+__________________________________________________________________________________________________
+max_pooling1d_8 (MaxPooling1D)  (None, 27, 100)      0           conv1d_14[0][0]                  
+__________________________________________________________________________________________________
+max_pooling1d_9 (MaxPooling1D)  (None, 27, 100)      0           conv1d_15[0][0]                  
+__________________________________________________________________________________________________
+concatenate_5 (Concatenate)     (None, 82, 100)      0           max_pooling1d_7[0][0]            
+                                                                 max_pooling1d_8[0][0]            
+                                                                 max_pooling1d_9[0][0]            
+__________________________________________________________________________________________________
+lstm_2 (LSTM)                   (None, 64)           42240       concatenate_5[0][0]              
+__________________________________________________________________________________________________
+dropout_5 (Dropout)             (None, 64)           0           lstm_2[0][0]                     
+__________________________________________________________________________________________________
+dense_7 (Dense)                 (None, 1)            65          dropout_5[0][0]                  
+__________________________________________________________________________________________________
+activation_5 (Activation)       (None, 1)            0           dense_7[0][0]                    
+==================================================================================================
+Total params: 9,312,605
+Trainable params: 9,312,605
+Non-trainable params: 0
+__________________________________________________________________________________________________
+
+------------------------------THANK YOU---------------------------------
